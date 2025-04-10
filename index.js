@@ -91,6 +91,9 @@ app.post('/cadastro', async (req, res) => {
 });
 
 // REGISTRAR PONTO
+
+const moment = require('moment-timezone'); 
+
 app.post('/registrar-ponto', async (req, res) => {
     const { id_funcionario, tipo_registro, local } = req.body;
 
