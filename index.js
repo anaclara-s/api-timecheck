@@ -92,7 +92,8 @@ app.post('/cadastro', async (req, res) => {
 
 // REGISTRAR PONTO
 
-const moment = require('moment-timezone'); 
+const moment = require('moment-timezone');
+process.env.TZ = 'America/Sao_Paulo';
 
 app.post('/registrar-ponto', async (req, res) => {
     const { id_funcionario, tipo_registro, local } = req.body;
