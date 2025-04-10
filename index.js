@@ -7,10 +7,10 @@ const app = express();
 const port = 3000;
 
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'MySQL-Servidor_Senha2024',
-    database: 'timecheck'
+    host: 'dpg-cvrvqi8gjchc73a48m7g-a',
+    user: 'timecheck_db_pymw_user',
+    password: 'uap8K7xcKnBdSYZmLDpWRBTzSzQ6mmkH',
+    database: 'timecheck_db_pymw'
 });
 
 app.use(bodyParser.json());
