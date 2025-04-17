@@ -16,13 +16,6 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-pool.connect()
-  .then(() => console.log('🟢 Conectado ao banco de dados com sucesso'))
-  .catch(err => {
-    console.error('🔴 Erro ao conectar com o banco de dados:', err.message);
-  });
-
-
 app.use(bodyParser.json());
 app.use(cors({
     origin: '*',
@@ -39,28 +32,25 @@ app.post('/login', async (req, res) => {
         return res.status(400).json({ sucess: false, mensage: 'Usuário e senha são obrigatórios' });
     }
 
-    const query = `SELECT * FROM funcionarios WHERE usuario = $1`;
+    const query = `
+        SELECT * FROM funcionarios 
+        WHERE usuario = $1 AND senha = crypt($2, senha)
+    `;
 
     try {
-        const result = await pool.query(query, [usuario]);
+        const result = await pool.query(query, [usuario, senha]);
 
-        if (result.rows.length === 0) {
-            return res.status(401).json({ sucess: false, mensage: 'Usuário ou senha incorretos' });
+        if (result.rows.length > 0) {
+            const user = result.rows[0];
+            res.json({
+                sucess: true,
+                mensage: 'Login bem-sucedido',
+                id_funcionario: user.id,
+                nome: user.nome
+            });
+        } else {
+            res.status(401).json({ sucess: false, mensage: 'Usuário ou senha incorretos' });
         }
-
-        const user = result.rows[0];
-        const senhaConfere = await bcrypt.compare(senha, user.senha);
-
-        if (!senhaConfere) {
-            return res.status(401).json({ sucess: false, mensage: 'Usuário ou senha incorretos' });
-        }
-
-        res.json({
-            sucess: true,
-            mensage: 'Login bem-sucedido',
-            id_funcionario: user.id,
-            nome: user.nome
-        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ sucess: false, mensage: 'Erro no servidor' });
@@ -68,51 +58,37 @@ app.post('/login', async (req, res) => {
 });
 
 // CADASTRO
-const bcrypt = require('bcryptjs');
-
 app.post('/cadastro', async (req, res) => {
     const { nome, email, senha } = req.body;
-    console.log('[📥] Requisição recebida:', { nome, email, senha });
 
     if (!nome || !email || !senha) {
-        console.log('[⚠️] Dados ausentes');
         return res.status(400).json({ sucess: false, mensage: 'Todos os campos são obrigatórios.' });
     }
 
     const partesNome = nome.trim().split(' ');
     const usuario = (partesNome[0] + '.' + partesNome[partesNome.length - 1]).toLowerCase();
-    console.log('[👤] Usuário gerado:', usuario);
 
     const verificaQuery = `SELECT * FROM funcionarios WHERE usuario = $1 OR email = $2`;
 
     try {
         const result = await pool.query(verificaQuery, [usuario, email]);
-        console.log('[🔍] Resultado da verificação:', result.rows);
 
         if (result.rows.length > 0) {
-            console.log('[🚫] Usuário ou e-mail já cadastrado');
             return res.status(400).json({ sucess: false, mensage: 'Usuário ou e-mail já cadastrado' });
         }
 
-        const saltRounds = 10;
-        const senhaCriptografada = await bcrypt.hash(senha, saltRounds);
-        console.log('[🔐] Senha criptografada');
-
         const insertQuery = `
             INSERT INTO funcionarios (nome, usuario, senha, email) 
-            VALUES ($1, $2, $3, $4)
+            VALUES ($1, $2, crypt($3, gen_salt('bf')), $4)
         `;
-        const insertResult = await pool.query(insertQuery, [nome, usuario, senhaCriptografada, email]);
-        console.log('[✅] Cadastro inserido no banco com sucesso');
+        await pool.query(insertQuery, [nome, usuario, senha, email]);
 
         res.json({ sucess: true, mensage: 'Cadastro realizado com sucesso' });
     } catch (err) {
-        console.error('[🔥] Erro ao cadastrar usuário:', err);
+        console.error(err);
         res.status(500).json({ sucess: false, mensage: 'Erro ao cadastrar usuário' });
     }
 });
-
-
 
 // REGISTRAR PONTO
 
