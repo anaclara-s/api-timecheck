@@ -58,6 +58,8 @@ app.post('/login', async (req, res) => {
 });
 
 // CADASTRO
+const bcrypt = require('bcrypt');
+
 app.post('/cadastro', async (req, res) => {
     const { nome, email, senha } = req.body;
 
@@ -77,11 +79,14 @@ app.post('/cadastro', async (req, res) => {
             return res.status(400).json({ sucess: false, mensage: 'Usuário ou e-mail já cadastrado' });
         }
 
+        const saltRounds = 10;
+        const senhaCriptografada = await bcrypt.hash(senha, saltRounds);
+
         const insertQuery = `
             INSERT INTO funcionarios (nome, usuario, senha, email) 
-            VALUES ($1, $2, crypt($3, gen_salt('bf')), $4)
+            VALUES ($1, $2, $3, $4)
         `;
-        await pool.query(insertQuery, [nome, usuario, senha, email]);
+        await pool.query(insertQuery, [nome, usuario, senhaCriptografada, email]);
 
         res.json({ sucess: true, mensage: 'Cadastro realizado com sucesso' });
     } catch (err) {
