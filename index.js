@@ -65,6 +65,7 @@ const bcrypt = require('bcryptjs');
 
 app.post('/cadastro', async (req, res) => {
     const { nome, email, senha } = req.body;
+    console.log("Dados recebidos:", nome, email); // 👈
 
     if (!nome || !email || !senha) {
         return res.status(400).json({ sucess: false, mensage: 'Todos os campos são obrigatórios.' });
@@ -72,11 +73,13 @@ app.post('/cadastro', async (req, res) => {
 
     const partesNome = nome.trim().split(' ');
     const usuario = (partesNome[0] + '.' + partesNome[partesNome.length - 1]).toLowerCase();
+    console.log("Usuário gerado:", usuario); // 👈
 
     const verificaQuery = `SELECT * FROM funcionarios WHERE usuario = $1 OR email = $2`;
 
     try {
         const result = await pool.query(verificaQuery, [usuario, email]);
+        console.log("Resultado da verificação:", result.rows); // 👈
 
         if (result.rows.length > 0) {
             return res.status(400).json({ sucess: false, mensage: 'Usuário ou e-mail já cadastrado' });
@@ -84,19 +87,22 @@ app.post('/cadastro', async (req, res) => {
 
         const saltRounds = 10;
         const senhaCriptografada = await bcrypt.hash(senha, saltRounds);
+        console.log("Senha criptografada:", senhaCriptografada); // 👈
 
         const insertQuery = `
             INSERT INTO funcionarios (nome, usuario, senha, email) 
             VALUES ($1, $2, $3, $4)
         `;
         await pool.query(insertQuery, [nome, usuario, senhaCriptografada, email]);
+        console.log("Usuário cadastrado com sucesso."); // 👈
 
         res.json({ sucess: true, mensage: 'Cadastro realizado com sucesso' });
     } catch (err) {
-        console.error(err);
+        console.error("Erro ao cadastrar:", err); // 👈
         res.status(500).json({ sucess: false, mensage: 'Erro ao cadastrar usuário' });
     }
 });
+
 
 // REGISTRAR PONTO
 
