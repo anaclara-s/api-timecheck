@@ -72,43 +72,46 @@ const bcrypt = require('bcryptjs');
 
 app.post('/cadastro', async (req, res) => {
     const { nome, email, senha } = req.body;
-    console.log("Dados recebidos:", nome, email); // 👈
+    console.log('[📥] Requisição recebida:', { nome, email, senha });
 
     if (!nome || !email || !senha) {
+        console.log('[⚠️] Dados ausentes');
         return res.status(400).json({ sucess: false, mensage: 'Todos os campos são obrigatórios.' });
     }
 
     const partesNome = nome.trim().split(' ');
     const usuario = (partesNome[0] + '.' + partesNome[partesNome.length - 1]).toLowerCase();
-    console.log("Usuário gerado:", usuario); // 👈
+    console.log('[👤] Usuário gerado:', usuario);
 
     const verificaQuery = `SELECT * FROM funcionarios WHERE usuario = $1 OR email = $2`;
 
     try {
         const result = await pool.query(verificaQuery, [usuario, email]);
-        console.log("Resultado da verificação:", result.rows); // 👈
+        console.log('[🔍] Resultado da verificação:', result.rows);
 
         if (result.rows.length > 0) {
+            console.log('[🚫] Usuário ou e-mail já cadastrado');
             return res.status(400).json({ sucess: false, mensage: 'Usuário ou e-mail já cadastrado' });
         }
 
         const saltRounds = 10;
         const senhaCriptografada = await bcrypt.hash(senha, saltRounds);
-        console.log("Senha criptografada:", senhaCriptografada); // 👈
+        console.log('[🔐] Senha criptografada');
 
         const insertQuery = `
             INSERT INTO funcionarios (nome, usuario, senha, email) 
             VALUES ($1, $2, $3, $4)
         `;
-        await pool.query(insertQuery, [nome, usuario, senhaCriptografada, email]);
-        console.log("Usuário cadastrado com sucesso."); // 👈
+        const insertResult = await pool.query(insertQuery, [nome, usuario, senhaCriptografada, email]);
+        console.log('[✅] Cadastro inserido no banco com sucesso');
 
         res.json({ sucess: true, mensage: 'Cadastro realizado com sucesso' });
     } catch (err) {
-        console.error("Erro ao cadastrar:", err); // 👈
+        console.error('[🔥] Erro ao cadastrar usuário:', err);
         res.status(500).json({ sucess: false, mensage: 'Erro ao cadastrar usuário' });
     }
 });
+
 
 
 // REGISTRAR PONTO
