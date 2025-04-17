@@ -32,25 +32,28 @@ app.post('/login', async (req, res) => {
         return res.status(400).json({ sucess: false, mensage: 'Usuário e senha são obrigatórios' });
     }
 
-    const query = `
-        SELECT * FROM funcionarios 
-        WHERE usuario = $1 AND senha = crypt($2, senha)
-    `;
+    const query = `SELECT * FROM funcionarios WHERE usuario = $1`;
 
     try {
-        const result = await pool.query(query, [usuario, senha]);
+        const result = await pool.query(query, [usuario]);
 
-        if (result.rows.length > 0) {
-            const user = result.rows[0];
-            res.json({
-                sucess: true,
-                mensage: 'Login bem-sucedido',
-                id_funcionario: user.id,
-                nome: user.nome
-            });
-        } else {
-            res.status(401).json({ sucess: false, mensage: 'Usuário ou senha incorretos' });
+        if (result.rows.length === 0) {
+            return res.status(401).json({ sucess: false, mensage: 'Usuário ou senha incorretos' });
         }
+
+        const user = result.rows[0];
+        const senhaConfere = await bcrypt.compare(senha, user.senha);
+
+        if (!senhaConfere) {
+            return res.status(401).json({ sucess: false, mensage: 'Usuário ou senha incorretos' });
+        }
+
+        res.json({
+            sucess: true,
+            mensage: 'Login bem-sucedido',
+            id_funcionario: user.id,
+            nome: user.nome
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ sucess: false, mensage: 'Erro no servidor' });
