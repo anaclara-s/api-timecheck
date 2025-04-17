@@ -61,7 +61,7 @@ app.post('/login', async (req, res) => {
 });
 
 // CADASTRO
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 app.post('/cadastro', async (req, res) => {
     const { nome, email, senha } = req.body;
