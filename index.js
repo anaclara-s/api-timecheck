@@ -16,6 +16,13 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
+pool.connect()
+  .then(() => console.log('🟢 Conectado ao banco de dados com sucesso'))
+  .catch(err => {
+    console.error('🔴 Erro ao conectar com o banco de dados:', err.message);
+  });
+
+
 app.use(bodyParser.json());
 app.use(cors({
     origin: '*',
