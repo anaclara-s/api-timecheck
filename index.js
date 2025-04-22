@@ -74,7 +74,7 @@ app.post('/cadastro', async (req, res) => {
         const result = await pool.query(verificaQuery, [usuario, email]);
 
         if (result.rows.length > 0) {
-            return res.status(400).json({ sucess: false, mensage: 'Usuário ou e-mail já cadastrado' });
+            return res.status(400).json({ sucess: false, mensage: 'E-mail já cadastrado' });
         }
 
         const insertQuery = `
